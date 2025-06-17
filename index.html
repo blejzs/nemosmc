@@ -14,28 +14,21 @@
     flex-direction: column;
     height: 100vh;
   }
-  header {
-    background: #1f2937;
-    padding: 20px;
+  .links {
+    padding: 15px;
     text-align: center;
-    font-size: 1.8rem;
-    font-weight: bold;
-    letter-spacing: 1.2px;
-    display: flex;
-    justify-content: center;
-    gap: 20px;
   }
-  header a {
+  .links a {
     color: #60a5fa;
     text-decoration: none;
-    font-weight: 600;
+    margin: 0 20px;
+    font-weight: normal;
     cursor: pointer;
-    padding: 8px 16px;
-    border-radius: 6px;
-    transition: background-color 0.3s;
+    font-size: 1.1rem;
   }
-  header a:hover, header a.active {
-    background-color: #2563eb;
+  .links a.active {
+    font-weight: bold;
+    text-decoration: underline;
   }
   main {
     flex-grow: 1;
@@ -49,23 +42,70 @@
 </style>
 </head>
 <body>
-<header>
-  <a href="#dc" id="discordLink" class="active" onclick="loadPDF('RegulaminDiscord.pdf', this)">Regulamin Discord</a>
-  <a href="#mc" id="minecraftLink" onclick="loadPDF('RegulaminMinecraft.pdf', this)">Regulamin Minecraft</a>
-</header>
+
+<div class="links">
+  <a href="?page=discord" id="discordLink">Regulamin Discord</a>
+  <a href="?page=minecraft" id="minecraftLink">Regulamin Minecraft</a>
+</div>
+
 <main>
-  <embed id="pdfEmbed" src="RegulaminDiscord.pdf" type="application/pdf" />
+  <embed id="pdfEmbed" src="" type="application/pdf" />
 </main>
 
 <script>
-  function loadPDF(pdfFile, element) {
-    const embed = document.getElementById('pdfEmbed');
-    embed.src = pdfFile;
-    // Aktywna klasa dla linków
-    document.querySelectorAll('header a').forEach(a => a.classList.remove('active'));
-    element.classList.add('active');
-    return false; // zapobiega domyślnemu linkowaniu
+  const pdfMap = {
+    "discord": "RegulaminDiscord.pdf",
+    "minecraft": "RegulaminMinecraft.pdf"
+  };
+
+  function setActiveLink(page) {
+    document.querySelectorAll('.links a').forEach(link => {
+      const urlParams = new URLSearchParams(link.getAttribute('href'));
+      const linkPage = urlParams.get('page');
+      if (linkPage === page) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
   }
+
+  function loadPDF(page) {
+    const pdfFile = pdfMap[page] || pdfMap["discord"];
+    document.getElementById('pdfEmbed').src = pdfFile;
+    setActiveLink(page);
+  }
+
+  function getPageFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('page') || "discord";
+  }
+
+  // Obsługa kliknięć - zmiana linku i PDF bez przeładowania
+  document.querySelectorAll('.links a').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const url = new URL(this.href);
+      const page = url.searchParams.get('page');
+      history.pushState({page: page}, null, '?page=' + page);
+      loadPDF(page);
+    });
+  });
+
+  // Obsługa wstecz/naprzód w historii
+  window.onpopstate = function(event) {
+    let page = "discord";
+    if (event.state && event.state.page) {
+      page = event.state.page;
+    } else {
+      page = getPageFromURL();
+    }
+    loadPDF(page);
+  };
+
+  // Na starcie ładujemy PDF z linku
+  loadPDF(getPageFromURL());
 </script>
+
 </body>
 </html>
